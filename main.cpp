@@ -1,6 +1,7 @@
 #include <iostream>
 #include <thread>
 #include <random>
+#include <chrono>
 #include "lock_free_queue.h"
 
 const int THREADS = 20;
@@ -9,6 +10,7 @@ const int NUMS = 100000;
 
 const int SENTINEL = -1;
 
+/// Basic test program that spawns up THREADS # producers that push values to the queue and an equal number of consumers popping values off
 int main() {
     LockFreeQueue<int> q;
 
@@ -42,7 +44,6 @@ int main() {
         });
     }
 
-
     for (auto& t : producers) {
         t.join();
     }
@@ -50,9 +51,6 @@ int main() {
         t.join();
     }
 
-
     std::cout << "accumulator actual: " << accumulator << '\n';
-
-
 }
 

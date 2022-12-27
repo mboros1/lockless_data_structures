@@ -6,6 +6,7 @@
 #define LOCKLESS_DATA_STRUCTURES_LOCK_FREE_QUEUE_H
 
 #include <atomic>
+#include <iterator>
 
 /// A lock free queue implementation based on the paper <a href="https://www.cs.rochester.edu/~scott/papers/1996_PODC_queues.pdf">Simple, Fast,
 /// and Practical Non-Blocking and Blocking Concurrent Queue Algorithms<a> by Maged M. Michael and Michael L. Scott.
@@ -118,6 +119,51 @@ public:
         }
         return true;
     }
+
+    /// Thread safe check if the queue is empty.
+    /// \return true if empty else false
+    bool empty() {
+        node_t* head = m_head.load();
+        node_t* tail = m_tail.load();
+        return (head == tail) and (head->next.load() == nullptr);
+    }
+
+    /// Thread safe check of number of elements in the queue. Number may not be consistent if queue is being updated while the check is occuring.
+    /// \return number of elements in the queue
+    int size() {
+        int sz = 0;
+        for (const auto& i : *this) {
+            sz++;
+        }
+        return sz;
+    }
+
+    /// Thread safe attempt to read the first element of the queue.
+    /// \param value reference that will be replaced with the value of the head of the queue if the operation succeeds
+    /// \return true if succeeds, else false
+    bool peek(T& value) {
+        node_t* head = m_head.load();
+        node_t* next = head->next.load();
+        if (next == nullptr) {
+            return false;
+        }
+        value = next->value;
+        return true;
+    }
+
+    /// Adds all elements in the given iterator range to the queue.
+    /// \tparam Iter the iterator type
+    /// \param begin start of the collection of elements
+    /// \param end end of the collection of elements
+    template<typename Iter>
+    void addAll(Iter begin, Iter end) {
+        static_assert(std::is_same<typename std::iterator_traits<Iter>::value_type, T>::value,
+                      "Iterator value type must be the same as queue element type");
+        for (Iter it = begin; it != end; ++it) {
+            push(*it);
+        }
+    }
+
 
     /// Used to iterate over the underlying linked list. This is not thread safe
     /// \return iterator to the first element in the list
