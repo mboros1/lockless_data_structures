@@ -17,17 +17,14 @@ class LockFreeQueue {
     struct node_t {
         T value;
         std::atomic<node_t*> next;
-        std::atomic<int> ref_count;
 
         node_t() {
             next.store(nullptr);
-            ref_count = 0;
         }
 
         explicit node_t(T value) {
             this->value = value;
             next.store(nullptr);
-            ref_count = 0;
         }
     };
 
@@ -106,7 +103,6 @@ public:
                     }
                     m_tail.compare_exchange_weak(tail, next, std::memory_order_release, std::memory_order_acquire);
                 } else {
-                    next->ref_count.fetch_add(1, std::memory_order_acquire);
                     value = next->value;
                     if (m_head.compare_exchange_weak(head, next, std::memory_order_release, std::memory_order_acquire)) {
                         break;
@@ -114,9 +110,8 @@ public:
                 }
             }
         }
-        if (head->ref_count.fetch_sub(1, std::memory_order_acq_rel) == 1) {
-            free(head);
-        }
+        // TODO: discovered this is a big issue in concurrent lockless systems; need to use hazard pointers to manage freeing resources without use after free
+//        free(head);
         return true;
     }
 
