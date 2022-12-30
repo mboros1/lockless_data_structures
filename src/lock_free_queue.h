@@ -111,6 +111,7 @@ public:
             }
         }
         // TODO: discovered this is a big issue in concurrent lockless systems; need to use hazard pointers to manage freeing resources without use after free
+        // TODO: I could probably just do this with ref counting with atomic pointer and atomic ref counter, just need to create the specialized pointer class
 //        free(head);
         return true;
     }
